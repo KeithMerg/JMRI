@@ -55,6 +55,7 @@ public class WarrantPreferencesPanelTest extends PreferencesPanelTestBase<Warran
         assertEquals(expected, offered, "JMRI's scales, without its CUSTOM one");
         assertTrue(offered.contains(Bundle.getMessage("scaleItem", "UK-OO", "76.2")), "OO offered");
         assertTrue(offered.contains(Bundle.getMessage("scaleItem", "HO", "87.1")), "HO offered");
+        assertTrue(offered.contains(Bundle.getMessage("scaleItem", "L", "38.0")), "L offered, as before");
         assertTrue(box.getItemAt(box.getItemCount() - 1) instanceof WarrantPreferencesPanel.CustomDialog,
                 "the custom item last");
     }

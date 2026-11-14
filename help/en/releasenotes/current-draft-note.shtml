@@ -868,7 +868,9 @@
                 list of scales, the one Dispatcher's Options and the
                 Timetable offer: OO is now UK-OO, UK-N is added, and G is
                 1:32. A layout scale set before that is not in the list,
-                such as 1:22.5, is kept and shown as Custom.</li>
+                such as 1:22.5, is kept and shown as Custom. L (1:38),
+                which Warrants offered, is added to JMRI's list, so
+                Dispatcher's Options and the Timetable offer it too.</li>
             <li></li>
         </ul>
 
