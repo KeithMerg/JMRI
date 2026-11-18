@@ -9,10 +9,19 @@ on: [ push, pull_request ]
 #  pull_request:
 #    branches: [ master ]
 
+# One run per pull request: a new push to a PR cancels that PR's older run, so a superseded run
+# doesn't wait for one of the scarce macOS runners. Push runs are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
 
-    runs-on: macos-15
+    # Pull requests run on an Intel macOS runner: GitHub's Apple-silicon (arm64) pool behind macos-15 is often
+    # short of capacity, and jobs then fail without running ("The job was not acquired by Runner of type
+    # hosted"). Pushes, including every master commit, still run on Apple silicon, which current Macs use.
+    runs-on: ${{ github.event_name == 'pull_request' && 'macos-15-intel' || 'macos-15' }}
 
     steps:
     - uses: actions/checkout@v7
