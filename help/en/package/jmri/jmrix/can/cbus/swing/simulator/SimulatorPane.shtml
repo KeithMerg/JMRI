@@ -124,6 +124,10 @@
         <li>SLiM ( simulation disabled )</li>
 
         <li>CANPAN</li>
+
+        <li>VLCB, a module running VLCB firmware. It answers node variable writes and
+        event teaching with a General Response (GRSP), as well as with the WRACK or CMDERR
+        that CBUS modules send, and reads event variables in learn mode with REQEV.</li>
       </ul>
 
       <h3 id="opc">Supported Operation Codes</h3>

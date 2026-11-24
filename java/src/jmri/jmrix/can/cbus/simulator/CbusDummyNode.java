@@ -38,8 +38,30 @@ public class CbusDummyNode extends CbusNode {
      */    
     @Override
     public CbusNodeCanListener getNewCanListener(){
-        canListener = new CbusDummyNodeCanListener(_memo,this);
+        canListener = createDummyCanListener();
         return canListener;
+    }
+
+    /**
+     * Create the listener which answers the frames sent to this simulated node.
+     * Simulated nodes which answer differently override this.
+     *
+     * @return a new listener for this node
+     */
+    protected CbusDummyNodeCanListener createDummyCanListener(){
+        return new CbusDummyNodeCanListener(_memo,this);
+    }
+
+    /**
+     * Send a frame from this simulated node, after the node's response delay
+     * plus an extra delay.
+     * Frames sent with a larger extra delay arrive later.
+     *
+     * @param r the frame to send
+     * @param extraDelay the extra delay in milliseconds
+     */
+    protected void sendFrame(CanReply r, int extraDelay){
+        send.sendWithDelay(r,canListener.getSendIn(),canListener.getSendOut(),canListener.getDelay() + extraDelay);
     }
 
     private CbusDummyNodeCanListener canListener;
