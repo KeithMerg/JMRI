@@ -519,7 +519,7 @@ public class PositionableLabel extends JLabel implements Positionable {
                         result = getFontMetrics(getFont()).stringWidth("0");
                     }
                 } else {
-                    result = getFontMetrics(getFont()).stringWidth(getText());
+                    result = textWidth(getText());
                 }
             }
             if (_icon && _namedIcon != null) {
@@ -537,6 +537,22 @@ public class PositionableLabel extends JLabel implements Positionable {
             log.trace("maxWidth= {} preferred width= {}", result, getPreferredSize().width);
         }
         return result;
+    }
+
+    /**
+     * The width the label's text takes as shown. HTML text, such as a Block
+     * Contents icon's allocated train, is measured as drawn, not by its
+     * markup.
+     *
+     * @param text the text
+     * @return its width in pixels
+     */
+    private int textWidth(@Nonnull String text) {
+        if (javax.swing.plaf.basic.BasicHTML.isHTMLString(text)) {
+            javax.swing.text.View view = javax.swing.plaf.basic.BasicHTML.createHTMLView(this, text);
+            return (int) Math.ceil(view.getPreferredSpan(javax.swing.text.View.X_AXIS));
+        }
+        return getFontMetrics(getFont()).stringWidth(text);
     }
 
     public int maxHeightTrue() {

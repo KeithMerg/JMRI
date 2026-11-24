@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javax.swing.JFrame;
 
@@ -116,6 +117,27 @@ public class BlockContentsIconTest extends PositionableLabelTest {
         new QueueTool().waitEmpty();
         assertNull(to.getText(), "nothing once the Block is no longer allocated");
         assertEquals(font, to.getFont(), "the label's font, which the panel file keeps, is never changed");
+    }
+
+    /**
+     * A label showing the train a Block is allocated to is as wide as the
+     * text it shows, not as wide as its HTML markup (#16002).
+     */
+    @Test
+    public void testAllocatedValueLabelIsAsWideAsItsText() {
+        jmri.Block block = jmri.InstanceManager.getDefault(BlockManager.class).provideBlock("IB1");
+        block.setValue("\u2192 Train A");
+        new QueueTool().waitEmpty();
+        int plain = to.maxWidthTrue();
+
+        block.setValue(null);
+        block.setAllocatedValue("Train A");
+        new QueueTool().waitEmpty();
+        int allocated = to.maxWidthTrue();
+        int markup = to.getFontMetrics(to.getFont()).stringWidth(to.getText());
+        assertTrue(allocated < markup, "narrower than the markup: " + allocated + " < " + markup);
+        assertTrue(Math.abs(allocated - plain) <= plain / 5,
+                "about as wide as the same text without markup: " + allocated + " and " + plain);
     }
 
     @Test
