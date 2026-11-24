@@ -75,8 +75,12 @@ public class PlaceTrainPanelTest {
         assertEquals("West", towards.getItemAt(0));
         assertEquals("East", towards.getItemAt(1));
         assertEquals("The end of the track", towards.getItemAt(2));
-        assertTrue(((JCheckBox) named(p, "PlaceTellTrainTracking")).isSelected());
-        assertTrue(p.isTellTrainTracking());
+        JCheckBox also = (JCheckBox) named(p, "PlaceAlsoUsual");
+        assertTrue(also.isSelected());
+        assertTrue(p.isAlsoUsual());
+        assertEquals("Also tell train tracking it is here", also.getText());
+        ThreadingUtil.runOnGUI(() -> p.setUsual(jmri.jmrit.display.TrackMarkerDropHandler.Usual.TRACKER));
+        assertEquals("Also start a Tracker for it here", also.getText(), "on a Control Panel Editor panel");
         assertTrue(labels(p).contains("This loco has no measured speeds, so its speeds are approximate."));
     }
 

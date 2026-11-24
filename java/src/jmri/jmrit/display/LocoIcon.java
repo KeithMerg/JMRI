@@ -317,7 +317,9 @@ public class LocoIcon extends PositionableLabel {
     }
 
     /**
-     * Set display attributes for Tracker
+     * Dropped on an OBlock's track: start a Tracker for the marker's train
+     * there, or, with a {@link TrackMarkerDropHandler} active, let it take
+     * the drop first.
      */
     @Override
     public void doMouseReleased(JmriMouseEvent event) {
@@ -327,19 +329,89 @@ public class LocoIcon extends PositionableLabel {
                 IndicatorTrack t = (IndicatorTrack) selection;
                 jmri.jmrit.logix.OBlock block = t.getOccBlock();
                 if (block != null) {
-                    block.setMarkerForeground(getForeground());
-                    block.setMarkerBackground(_locoColor);
-                    PositionablePopupUtil util = getPopupUtility();
-                    block.setMarkerFont(util.getFont());
-                    String name = getText(); // rotated icons have null text
-                    if (name == null || name.length() == 0) {
-                        name = getUnRotatedText();
+                    for (TrackMarkerDropHandler handler : java.util.ServiceLoader.load(TrackMarkerDropHandler.class)) {
+                        if (handler.isActive()) {
+                            // the handler may put a train there, detected a moment later
+                            handler.markerDropped(this, block, _editor.getTargetPanel(),
+                                    TrackMarkerDropHandler.Usual.TRACKER,
+                                    () -> whenOccupied(block, () -> startTracker(block)));
+                            return;
+                        }
                     }
-                    InstanceManager.getDefault(TrackerTableAction.class).markNewTracker(block, name, this);
-                    dock();
+                    startTracker(block);
                 }
                 break;
             }
+        }
+    }
+
+    /**
+     * Set display attributes for Tracker, and start one for this marker's
+     * train in an OBlock.
+     *
+     * @param block the OBlock
+     */
+    private void startTracker(@javax.annotation.Nonnull jmri.jmrit.logix.OBlock block) {
+        block.setMarkerForeground(getForeground());
+        block.setMarkerBackground(_locoColor);
+        PositionablePopupUtil util = getPopupUtility();
+        block.setMarkerFont(util.getFont());
+        String name = getText(); // rotated icons have null text
+        if (name == null || name.length() == 0) {
+            name = getUnRotatedText();
+        }
+        InstanceManager.getDefault(TrackerTableAction.class).markNewTracker(block, name, this);
+        dock();
+    }
+
+    /** How long to wait for a Block a train was put in to show occupied, ms. */
+    static final int OCCUPIED_WAIT_MS = 2000;
+
+    /**
+     * Run something once a Block shows occupied, or after
+     * {@link #OCCUPIED_WAIT_MS} if it doesn't. A drop handler may put a train
+     * in the Block (a simulated one is detected a moment later), and a Tracker
+     * can't be started in an empty OBlock. An OBlock's state has other bits
+     * too, so only the occupied bit is looked at.
+     *
+     * @param block the Block the train was placed in
+     * @param then  what to run
+     */
+    static void whenOccupied(@javax.annotation.Nonnull jmri.Block block, @javax.annotation.Nonnull Runnable then) {
+        if ((block.getState() & jmri.Block.OCCUPIED) != 0) {
+            then.run();
+            return;
+        }
+        java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean();
+        javax.swing.Timer timeout = new javax.swing.Timer(OCCUPIED_WAIT_MS, null);
+        java.beans.PropertyChangeListener occupied = new java.beans.PropertyChangeListener() {
+            @Override
+            public void propertyChange(java.beans.PropertyChangeEvent e) {
+                if ((block.getState() & jmri.Block.OCCUPIED) != 0) {
+                    finish();
+                }
+            }
+
+            void finish() {
+                block.removePropertyChangeListener(this);
+                timeout.stop();
+                if (done.compareAndSet(false, true)) {
+                    // block state changes come on the layout thread (Swing thread)
+                    jmri.util.ThreadingUtil.runOnGUIEventually(then::run);
+                }
+            }
+        };
+        timeout.addActionListener(e -> {
+            block.removePropertyChangeListener(occupied);
+            if (done.compareAndSet(false, true)) {
+                then.run();
+            }
+        });
+        timeout.setRepeats(false);
+        block.addPropertyChangeListener(occupied);
+        timeout.start();
+        if ((block.getState() & jmri.Block.OCCUPIED) != 0) {   // in case it became occupied while listening started
+            occupied.propertyChange(null);
         }
     }
 

@@ -10,6 +10,8 @@ import javax.annotation.Nonnull;
 import jmri.Block;
 import jmri.DccLocoAddress;
 import jmri.Path;
+import jmri.jmrit.logix.OBlock;
+import jmri.jmrit.logix.Portal;
 import jmri.jmrit.roster.RosterEntry;
 import jmri.jmrit.simulation.Detection;
 import jmri.jmrit.simulation.SimulatedLayout;
@@ -70,10 +72,21 @@ final class PlaceTrainModel {
             measuredSpeeds = false;
         }
         List<Block> found = new ArrayList<>();
-        for (Path p : block.getPaths()) {
-            Block b = p.getBlock();
-            if (b != null && b != block && !found.contains(b)) {
-                found.add(b);
+        if (block instanceof OBlock) {
+            // an OBlock, as on a Control Panel Editor panel, is joined to others by Portals;
+            // its OPaths are routes through it, and each one's Block is the OBlock itself
+            for (Portal p : ((OBlock) block).getPortals()) {
+                Block b = p.getOpposingBlock((OBlock) block);
+                if (b != null && b != block && !found.contains(b)) {
+                    found.add(b);
+                }
+            }
+        } else {
+            for (Path p : block.getPaths()) {
+                Block b = p.getBlock();
+                if (b != null && b != block && !found.contains(b)) {
+                    found.add(b);
+                }
             }
         }
         neighbours = Collections.unmodifiableList(found);

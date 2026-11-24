@@ -106,6 +106,52 @@ public class PlaceTrainModelTest {
                 () -> m.build(3, 300.0, PlaceTrainModel.DetectionChoice.HEAD_AND_TAIL, 150.0, 0.0), "no tail marker");
     }
 
+    /*
+     * Three OBlocks in a line, joined by Portals, as on a Control Panel Editor
+     * panel: A - B - C, each 1000 mm, with an OPath through each.
+     */
+    private jmri.jmrit.logix.OBlock[] oblocks() {
+        jmri.jmrit.logix.OBlockManager obm = jmri.InstanceManager.getDefault(jmri.jmrit.logix.OBlockManager.class);
+        jmri.jmrit.logix.PortalManager pm = jmri.InstanceManager.getDefault(jmri.jmrit.logix.PortalManager.class);
+        jmri.jmrit.logix.OBlock[] o = new jmri.jmrit.logix.OBlock[3];
+        String[] names = {"A", "B", "C"};
+        for (int i = 0; i < 3; i++) {
+            o[i] = java.util.Objects.requireNonNull(obm.createNewOBlock("OB" + (i + 1), names[i]), "OBlock created");
+            o[i].setLength(1000);
+        }
+        jmri.jmrit.logix.Portal ab = pm.createNewPortal("A-B");
+        ab.setFromBlock(o[0], false);
+        ab.setToBlock(o[1], false);
+        jmri.jmrit.logix.Portal bc = pm.createNewPortal("B-C");
+        bc.setFromBlock(o[1], false);
+        bc.setToBlock(o[2], false);
+        o[0].addPath(new jmri.jmrit.logix.OPath("a", o[0], null, ab, null));
+        o[1].addPath(new jmri.jmrit.logix.OPath("b", o[1], ab, bc, null));
+        o[2].addPath(new jmri.jmrit.logix.OPath("c", o[2], bc, null, null));
+        return o;
+    }
+
+    @Test
+    public void testOBlockNeighboursAreThroughItsPortals() {
+        jmri.jmrit.logix.OBlock[] o = oblocks();
+        // an OPath's Block is the OBlock it is in, so its paths would give the OBlock itself
+        assertEquals(List.of(o[0], o[2]), new PlaceTrainModel(null, "3", o[1]).getNeighbours());
+        assertEquals(List.of(o[1]), new PlaceTrainModel(null, "3", o[2]).getNeighbours());
+    }
+
+    @Test
+    public void testPlaceOnAnOBlock() {
+        jmri.jmrit.logix.OBlock[] o = oblocks();
+        PlaceTrainModel m = new PlaceTrainModel(null, "5 Goods", o[1]);
+        VirtualTrain t = m.build(5, 200.0, PlaceTrainModel.DetectionChoice.ENTIRE_TRAIN, 0.0, 0.0);
+        m.place(t, o[0], 600.0);
+        SimulationTruth.TrainTruth truth = SimulationTestUtil.truth(t);
+        assertNotNull(truth);
+        assertEquals(o[1], truth.getFrontBlock());
+        assertEquals(600.0, truth.getFrontPositionMm(), 0.001);
+        assertEquals(List.of(t), PlaceTrainModel.trainsIn(o[1]));
+    }
+
     @Test
     public void testPlacePutsTheTrainWhereAsked() {
         PlaceTrainModel m = new PlaceTrainModel(null, "3 Mail", blocks[1]);

@@ -18,6 +18,7 @@ import javax.swing.SpinnerNumberModel;
 import jmri.Block;
 import jmri.InvokeOnGuiThread;
 import jmri.Sensor;
+import jmri.jmrit.display.TrackMarkerDropHandler;
 import jmri.jmrit.simulation.SimulatedLayout;
 import jmri.jmrit.simulation.VirtualTrain;
 
@@ -43,7 +44,8 @@ final class PlaceTrainPanel extends JPanel {
     private final JSpinner tailLength;
     private final JComboBox<String> rearTowards = new JComboBox<>();
     private final JSpinner front;
-    private final JCheckBox tellTrainTracking = new JCheckBox(Bundle.getMessage("PlaceTellTrainTracking"), true);
+    // what the drop does without the simulator, done as well when ticked
+    private final JCheckBox alsoUsual = new JCheckBox(Bundle.getMessage("PlaceTellTrainTracking"), true);
 
     /** True until the user changes the front's position: it then follows the train's length. */
     private boolean frontFollowsLength = true;
@@ -92,7 +94,7 @@ final class PlaceTrainPanel extends JPanel {
         tailLength.setName("PlaceTailLength"); // NOI18N
         rearTowards.setName("PlaceRearTowards"); // NOI18N
         front.setName("PlaceFront"); // NOI18N
-        tellTrainTracking.setName("PlaceTellTrainTracking"); // NOI18N
+        alsoUsual.setName("PlaceAlsoUsual"); // NOI18N
 
         addRow(Bundle.getMessage("PlaceTrain"), new JLabel(model.getName()));
         addRow(Bundle.getMessage("PlaceBlock"), new JLabel(model.getBlock().getDisplayName()));
@@ -113,7 +115,7 @@ final class PlaceTrainPanel extends JPanel {
         rearTowards.addItem(Bundle.getMessage("PlaceEndOfTrack"));
         addRow(Bundle.getMessage("PlaceRearTowards"), rearTowards);
         addRow(Bundle.getMessage("PlaceFront", units.getName()), front);
-        addWide(tellTrainTracking);
+        addWide(alsoUsual);
 
         VirtualTrain placed = model.getName().isEmpty() ? null : PlaceTrainModel.placedTrain(model.getName());
         if (placed != null) {
@@ -214,10 +216,23 @@ final class PlaceTrainPanel extends JPanel {
     }
 
     /**
-     * @return true if train tracking is to be told the train is in the Block
+     * Say what the drop also does when ticked: what it does on this kind of
+     * panel without the simulator.
+     *
+     * @param usual what the drop does without the simulator
      */
     @InvokeOnGuiThread
-    boolean isTellTrainTracking() {
-        return tellTrainTracking.isSelected();
+    void setUsual(@Nonnull TrackMarkerDropHandler.Usual usual) {
+        alsoUsual.setText(Bundle.getMessage(usual == TrackMarkerDropHandler.Usual.TRACKER
+                ? "PlaceStartTracker" : "PlaceTellTrainTracking"));
+    }
+
+    /**
+     * @return true if the drop is also to do what it does without the
+     *         simulator: tell train tracking, or start a Tracker
+     */
+    @InvokeOnGuiThread
+    boolean isAlsoUsual() {
+        return alsoUsual.isSelected();
     }
 }

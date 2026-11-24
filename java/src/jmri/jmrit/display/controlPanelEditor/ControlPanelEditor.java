@@ -50,9 +50,11 @@ import jmri.jmrit.display.PositionablePopupUtil;
 import jmri.jmrit.display.ReporterIcon;
 import jmri.jmrit.display.RpsPositionIcon;
 import jmri.jmrit.display.ToolTip;
+import jmri.jmrit.display.TrackMarkerDropHandler;
 import jmri.jmrit.display.controlPanelEditor.shape.ShapeDrawer;
 import jmri.jmrit.display.palette.ColorDialog;
 import jmri.jmrit.display.palette.ItemPalette;
+import jmri.jmrit.logix.OBlock;
 import jmri.jmrit.logix.WarrantTableAction;
 import jmri.util.HelpUtil;
 import jmri.util.SystemType;
@@ -1680,6 +1682,16 @@ public class ControlPanelEditor extends Editor implements DropTargetListener, Cl
                 setCopyMenu(p, popup);
             }
             p.showPopUp(popup);
+            if (p instanceof IndicatorTrack && allControlling()) {
+                OBlock block = ((IndicatorTrack) p).getOccBlock();
+                if (block != null) {
+                    for (TrackMarkerDropHandler handler : java.util.ServiceLoader.load(TrackMarkerDropHandler.class)) {
+                        if (handler.isActive()) {
+                            handler.addBlockMenuItems(popup, block);
+                        }
+                    }
+                }
+            }
             if (util != null) {
                 util.setAdditionalViewPopUpMenu(popup);
             }

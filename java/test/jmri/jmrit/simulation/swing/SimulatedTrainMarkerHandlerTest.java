@@ -18,7 +18,7 @@ import jmri.Block;
 import jmri.InstanceManager;
 import jmri.Sensor;
 import jmri.jmrit.display.LocoIcon;
-import jmri.jmrit.display.layoutEditor.TrackMarkerDropHandler;
+import jmri.jmrit.display.TrackMarkerDropHandler;
 import jmri.jmrit.roster.RosterEntry;
 import jmri.jmrit.simulation.SimulationTestLayout;
 import jmri.jmrit.simulation.SimulationTestLayouts;
@@ -77,12 +77,13 @@ public class SimulatedTrainMarkerHandlerTest {
     }
 
     private void drop(LocoIcon marker, Block block, Thread pressing) {
-        ThreadingUtil.runOnGUI(() -> handler.markerDropped(marker, block, layout.getEditor(), told::incrementAndGet));
+        ThreadingUtil.runOnGUI(() -> handler.markerDropped(marker, block, layout.getEditor(),
+                TrackMarkerDropHandler.Usual.TRAIN_TRACKING, told::incrementAndGet));
         JUnitUtil.waitFor(() -> !pressing.isAlive(), "dialogs answered");
     }
 
     @Test
-    public void testFoundAsALayoutEditorService() {
+    public void testFoundAsAPanelEditorService() {
         List<String> found = new ArrayList<>();
         for (TrackMarkerDropHandler h : ServiceLoader.load(TrackMarkerDropHandler.class)) {
             found.add(h.getClass().getName());

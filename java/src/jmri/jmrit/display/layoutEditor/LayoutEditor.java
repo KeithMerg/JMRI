@@ -31,6 +31,7 @@ import jmri.jmrit.catalog.NamedIcon;
 import jmri.jmrit.dispatcher.DispatcherAction;
 import jmri.jmrit.dispatcher.DispatcherFrame;
 import jmri.jmrit.display.*;
+import jmri.jmrit.display.TrackMarkerDropHandler;
 import jmri.jmrit.display.layoutEditor.LayoutEditorDialogs.*;
 import jmri.jmrit.display.layoutEditor.LayoutEditorToolBarPanel.LocationFormat;
 import jmri.jmrit.display.panelEditor.PanelEditor;
@@ -3762,7 +3763,8 @@ public final class LayoutEditor extends PanelEditor implements MouseWheelListene
         }
         for (TrackMarkerDropHandler handler : java.util.ServiceLoader.load(TrackMarkerDropHandler.class)) {
             if (handler.isActive()) {
-                handler.markerDropped(marker, block, this, () -> markerTrainIsIn(marker, block));
+                handler.markerDropped(marker, block, this, TrackMarkerDropHandler.Usual.TRAIN_TRACKING,
+                        () -> markerTrainIsIn(marker, block));
                 return;
             }
         }

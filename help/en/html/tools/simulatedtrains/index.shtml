@@ -125,6 +125,21 @@
       <p>In a profile with a connection to a layout, a dropped marker never places a simulated
       train: it only tells train tracking where the train is.</p>
 
+      <h3 id="cpe">On a Control Panel Editor panel</h3>
+
+      <p>On a <a href="../../../package/jmri/jmrit/display/ControlPanelEditor.shtml">Control
+      Panel Editor</a> panel, a train is placed the same way, by dragging a loco marker onto
+      track whose occupancy comes from an OBlock. The neighbouring Blocks offered under
+      <strong>Rear towards</strong> are those through the OBlock's Portals.</p>
+
+      <p>There the last box is <strong>Also start a Tracker for it here</strong>: ticked, a
+      <a href="../../../package/jmri/jmrit/logix/Tracker.shtml">Tracker</a> is started for the
+      train once its OBlock shows occupied, as a dropped marker does on a real layout. Unticked,
+      only the simulated train is placed.</p>
+
+      <p>To take a train off, right-click the OBlock's track, with the panel out of edit mode, and
+      choose <strong>Remove Simulated Train</strong>.</p>
+
       <h3 id="scripts">From a script</h3>
 
       <p>Trains can also be placed by scripts. The sample script
