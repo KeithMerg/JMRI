@@ -28,6 +28,7 @@ public class CbusPreferences extends PreferencesBean {
     private boolean _startupSearchForNodes = false;
     private boolean searchForNodesBackupXmlOnStartup = false;
     private boolean _saveRestoreEventTable = true;
+    private boolean _vlcbCompleteWritesOnGrsp = false;
     private int minimumNumBackupsToKeep = 10;
     private int bootWriteDelay = CbusNode.BOOT_PROG_TIMEOUT_FAST;
     // Default to no programmers available. The p[rogrammer manager will validate
@@ -61,6 +62,8 @@ public class CbusPreferences extends PreferencesBean {
             "bootWriteDelay",this.getBootWriteDelay() );
         this._saveRestoreEventTable = sharedPreferences.getBoolean(
             "saveRestoreEventTable",this.getSaveRestoreEventTable() );
+        this._vlcbCompleteWritesOnGrsp = sharedPreferences.getBoolean(
+            "vlcbCompleteWritesOnGrsp", this.getVlcbCompleteWritesOnGrsp() );
 
         this._isGlobalProgrammerAvailable = sharedPreferences.getBoolean(
             "globalprogrammer", this.isGlobalProgrammerAvailable() );
@@ -88,6 +91,7 @@ public class CbusPreferences extends PreferencesBean {
         sharedPreferences.putInt("minimumNumBackupsToKeep", this.getMinimumNumBackupsToKeep() );
         sharedPreferences.putInt("bootWriteDelay", this.getBootWriteDelay() );
         sharedPreferences.putBoolean("saveRestoreEventTable", this.getSaveRestoreEventTable() );
+        sharedPreferences.putBoolean("vlcbCompleteWritesOnGrsp", this.getVlcbCompleteWritesOnGrsp() );
 
         sharedPreferences.putBoolean("globalprogrammer", this.isGlobalProgrammerAvailable() );
         sharedPreferences.putBoolean("addressedprogrammer", this.isAddressedModePossible() );
@@ -229,6 +233,29 @@ public class CbusPreferences extends PreferencesBean {
      */
     public void setSaveRestoreEventTable( boolean newVal ){
         _saveRestoreEventTable = newVal;
+        savePreferences();
+    }
+
+    /**
+     * Whether the Node Manager completes each NV write and event teach to a
+     * VLCB module when the module answers it with GRSP, as VLCB specifies,
+     * rather than with WRACK, which VLCB deprecates. Off by default.
+     *
+     * @return true to complete writes to VLCB modules on GRSP
+     * @since 5.19.2
+     */
+    public boolean getVlcbCompleteWritesOnGrsp() {
+        return _vlcbCompleteWritesOnGrsp;
+    }
+
+    /**
+     * Set whether the Node Manager completes writes to VLCB modules on GRSP.
+     *
+     * @param newVal true to complete writes to VLCB modules on GRSP
+     * @since 5.19.2
+     */
+    public void setVlcbCompleteWritesOnGrsp(boolean newVal) {
+        _vlcbCompleteWritesOnGrsp = newVal;
         savePreferences();
     }
 

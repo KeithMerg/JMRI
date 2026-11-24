@@ -204,7 +204,7 @@ public class CbusNodeCanListener implements jmri.jmrix.can.CanListener {
         
         if ( _node.getNodeNvManager().teachOutstandingNvs() ) {
         
-            if ( opc == CbusConstants.CBUS_WRACK ) { // response from node
+            if ( isWriteDone(m, CbusConstants.CBUS_NVSET) ) { // response from node
                 _node.getNodeTimerManager().clearsendEditNvTimeout();
                 _node.getNodeNvManager().sendNextNvToNode();
             }
@@ -276,12 +276,60 @@ public class CbusNodeCanListener implements jmri.jmrix.can.CanListener {
         }
     }
     
+    /**
+     * Whether a frame from this node says a write succeeded: WRACK, or for a
+     * node that completes writes on GRSP, a GRSP with result OK for the
+     * request. A failed write is reported by CMDERR either way.
+     *
+     * @param m         the frame from the node
+     * @param requested the opcode of the write
+     * @return true if the write is done
+     */
+    private boolean isWriteDone(CanReply m, int requested) {
+        int opc = CbusMessage.getOpcode(m);
+        if ( !completesOnGrsp() ) {
+            return opc == CbusConstants.CBUS_WRACK;
+        }
+        if ( opc != CbusConstants.VLCB_GRSP || m.getNumDataElements() < 6 || m.getElement(3) != requested ) {
+            return false;
+        }
+        if ( m.getElement(5) != GRSP_OK ) {
+            log.debug("Node {} answers {} with GRSP result {}", _node, requested, m.getElement(5));
+            return false;
+        }
+        return true;
+    }
+
+    /** The GRSP result for success. */
+    static final int GRSP_OK = 0;
+
+    /**
+     * Whether this node's writes complete on GRSP: a VLCB node, with the
+     * Node Manager's option to use GRSP for VLCB modules set. Otherwise they
+     * complete on WRACK, as for a CBUS node. CMDERR completes a failed write
+     * either way.
+     *
+     * @return true to complete writes on GRSP
+     */
+    private boolean completesOnGrsp() {
+        jmri.jmrix.can.cbus.CbusPreferences p = memo.get(jmri.jmrix.can.cbus.CbusPreferences.class);
+        return p != null && p.getVlcbCompleteWritesOnGrsp() && _node.getNodeParamManager().isVlcb();
+    }
+
     private void processInLearnMode(CanReply m){
     
         int opc = CbusMessage.getOpcode(m);
         int nn = ( m.getElement(1) * 256 ) + m.getElement(2);
         
         switch (opc) {
+            case CbusConstants.VLCB_GRSP:
+                processTeachGrsp(m, nn);
+                break;
+            case CbusConstants.CBUS_WRACK:
+                if ( _node.getNodeEventManager().TEACH_OUTSTANDING_EVS && completesOnGrsp() ) {
+                    return; // the node's GRSP completes the teach
+                }
+                break;
             case CbusConstants.CBUS_NNCLR:
                 // instruction to delete all node events
                 if ( nn == _node.getNodeNumber() ) {
@@ -323,6 +371,21 @@ public class CbusNodeCanListener implements jmri.jmrix.can.CanListener {
         }
     }
     
+    /**
+     * A GRSP with result OK from this node completes an event teach when it
+     * answers EVLRN or EVULN and the node completes writes on GRSP.
+     *
+     * @param m  the GRSP
+     * @param nn the node number it carries
+     */
+    private void processTeachGrsp(CanReply m, int nn) {
+        if ( _node.getNodeEventManager().TEACH_OUTSTANDING_EVS && nn == _node.getNodeNumber()
+                && ( isWriteDone(m, CbusConstants.CBUS_EVLRN) || isWriteDone(m, CbusConstants.CBUS_EVULN) ) ) {
+            _node.getNodeTimerManager().clearsendEditEvTimeout();
+            _node.getNodeEventManager().teachNewEvLoop();
+        }
+    }
+
     private void processEvlrni(CanReply m){
         // check if current index is valid
         if ( !_node.getNodeEventManager().isEventIndexValid() ){

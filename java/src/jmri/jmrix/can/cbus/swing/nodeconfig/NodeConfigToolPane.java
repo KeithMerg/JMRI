@@ -424,6 +424,14 @@ public class NodeConfigToolPane extends jmri.jmrix.can.swing.CanPanel implements
         optionsMenu.add( startupNodesXmlMenuItem );
         optionsMenu.add( new JSeparator() );
         optionsMenu.add( numBackupsMenu );
+        if ( preferences != null ) {
+            JCheckBoxMenuItem vlcbGrsp = new JCheckBoxMenuItem(Bundle.getMessage("VlcbWritesOnGrsp"));
+            vlcbGrsp.setToolTipText(Bundle.getMessage("VlcbWritesOnGrspTip"));
+            vlcbGrsp.setSelected( preferences.getVlcbCompleteWritesOnGrsp() );
+            vlcbGrsp.addActionListener( ae -> preferences.setVlcbCompleteWritesOnGrsp( vlcbGrsp.isSelected() ) );
+            optionsMenu.add( new JSeparator() );
+            optionsMenu.add( vlcbGrsp );
+        }
 
         menuList.add(fileMenu);
         menuList.add(optionsMenu);

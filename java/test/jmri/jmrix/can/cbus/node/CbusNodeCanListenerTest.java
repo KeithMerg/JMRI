@@ -290,6 +290,126 @@ public class CbusNodeCanListenerTest {
         return r;
     }
 
+    /** Make the node a VLCB node with 3 NVs, NV1 to 3 set to 1, 2 and 3. */
+    private void vlcbNodeWithThreeNvs() {
+        // flags (parameter 8) with bit 6 set: a VLCB node
+        nodeToEdit.getNodeParamManager().setParameters(new int[]{8,250,2,252,4,2,3,1,0x40 | 0x08});
+        nodeToEdit.getNodeNvManager().setNVs(new int[]{3,1,2,3});
+        assertTrue( nodeToEdit.getNodeParamManager().isVlcb(), "a VLCB node");
+    }
+
+    /** Hear the NVSET JMRI sent, as the traffic controller would pass it on. */
+    private void hearLastNvset() {
+        CanMessage sent = tcis.outbound.elementAt(tcis.outbound.size() - 1);
+        CanMessage m = new CanMessage(tcis.getCanid());
+        m.setNumDataElements(sent.getNumDataElements());
+        for (int i = 0; i < sent.getNumDataElements(); i++) {
+            m.setElement(i, sent.getElement(i));
+        }
+        nodeToEdit.getCanListener().message(m);
+    }
+
+    private CanReply fromNode(int... bytes) {
+        CanReply r = new CanReply(0x12);
+        r.setNumDataElements(bytes.length);
+        for (int i = 0; i < bytes.length; i++) {
+            r.setElement(i, bytes[i]);
+        }
+        return r;
+    }
+
+    private CanReply wrack() {
+        return fromNode(CbusConstants.CBUS_WRACK, 0x1F, 0x19);
+    }
+
+    private CanReply grsp(int requested, int result) {
+        return fromNode(CbusConstants.VLCB_GRSP, 0x1F, 0x19, requested, 1, result);
+    }
+
+    @Test
+    public void testVlcbNvWritesCompleteOnGrspWhenChosen() {
+        memo.get(CbusPreferences.class).setVlcbCompleteWritesOnGrsp(true);
+        vlcbNodeWithThreeNvs();
+        AtomicInteger errorsAtCompletion = new AtomicInteger(-1);
+        nodeToEdit.addPropertyChangeListener(e -> {
+            if ( "TEACHNVCOMPLETE".equals(e.getPropertyName()) ) {
+                errorsAtCompletion.set((Integer) e.getNewValue());
+            }
+        });
+        nodeToEdit.getNodeNvManager().sendNvsToNode(new int[]{3,11,12,3});
+        assertEquals( "[5f8] 96 1F 19 01 0B", tcis.outbound.lastElement().toString(), "NV1 set to 11");
+        hearLastNvset();
+
+        nodeToEdit.getCanListener().reply(wrack());
+        assertEquals( 1, tcis.outbound.size(), "WRACK doesn't complete a write to a VLCB node");
+
+        nodeToEdit.getCanListener().reply(grsp(CbusConstants.CBUS_NVSET, CbusNodeCanListener.GRSP_OK));
+        JUnitUtil.waitFor(() -> tcis.outbound.size() > 1, "next NV sent");
+        assertEquals( "[5f8] 96 1F 19 02 0C", tcis.outbound.lastElement().toString(), "NV2 set to 12");
+        hearLastNvset();
+
+        nodeToEdit.getCanListener().reply(grsp(CbusConstants.CBUS_NVSET, 3)); // failed
+        assertEquals( 2, tcis.outbound.size(), "a failed GRSP doesn't complete the write: its CMDERR does");
+        nodeToEdit.getCanListener().reply(fromNode(CbusConstants.CBUS_CMDERR, 0x1F, 0x19, 10));
+        JUnitAppender.assertErrorMessageStartsWith("Node 7961 reporting ERROR : Invalid Node Variable Index");
+        JUnitAppender.assertWarnMessageStartsWith("Node reports NV Write Error");
+        JUnitUtil.waitFor(() -> errorsAtCompletion.get() >= 0, "teach complete");
+        assertEquals( 1, errorsAtCompletion.get(), "the error counted");
+    }
+
+    @Test
+    public void testVlcbNvWritesCompleteOnWrackUnlessChosen() {
+        vlcbNodeWithThreeNvs();
+        nodeToEdit.getNodeNvManager().sendNvsToNode(new int[]{3,11,12,3});
+        hearLastNvset();
+        nodeToEdit.getCanListener().reply(grsp(CbusConstants.CBUS_NVSET, CbusNodeCanListener.GRSP_OK));
+        assertEquals( 1, tcis.outbound.size(), "GRSP not used: as before");
+        nodeToEdit.getCanListener().reply(wrack());
+        JUnitUtil.waitFor(() -> tcis.outbound.size() > 1, "next NV sent on WRACK, as before");
+        assertEquals( "[5f8] 96 1F 19 02 0C", tcis.outbound.lastElement().toString());
+    }
+
+    @Test
+    public void testCbusNodeIgnoresTheGrspOption() {
+        memo.get(CbusPreferences.class).setVlcbCompleteWritesOnGrsp(true);
+        nodeToEdit.getNodeParamManager().setParameters(new int[]{8,165,2,19,4,2,3,1,0x08}); // a CBUS node
+        nodeToEdit.getNodeNvManager().setNVs(new int[]{3,1,2,3});
+        nodeToEdit.getNodeNvManager().sendNvsToNode(new int[]{3,11,12,3});
+        hearLastNvset();
+        nodeToEdit.getCanListener().reply(wrack());
+        JUnitUtil.waitFor(() -> tcis.outbound.size() > 1, "a CBUS node's write completes on WRACK");
+    }
+
+    @Test
+    public void testVlcbEventTeachCompletesOnGrspWhenChosen() {
+        memo.get(CbusPreferences.class).setVlcbCompleteWritesOnGrsp(true);
+        // 2 event variables per event, flags with bit 6 set: a VLCB node
+        nodeToEdit.getNodeParamManager().setParameters(new int[]{8,165,2,5,4,2,3,7,0x40 | 0x08});
+        CbusNodeEvent ev = new CbusNodeEvent(memo, 123, 456, 7961, -1, 2);
+        ev.setEvArr(new int[]{1,255});
+        ArrayList<CbusNodeEvent> list = new ArrayList<>();
+        list.add(ev);
+        nodeToEdit.getNodeEventManager().sendNewEvSToNode(list);
+        JUnitUtil.waitFor(() -> tcis.outbound.size() > 1, "NNLRN and first EVLRN sent");
+        assertEquals( "[5f8] D2 00 7B 01 C8 01 01", tcis.outbound.lastElement().toString(), "EV1 taught");
+
+        CanMessage learn = new CanMessage(tcis.getCanid());
+        learn.setNumDataElements(3);
+        learn.setElement(0, CbusConstants.CBUS_NNLRN);
+        learn.setElement(1, 0x1F);
+        learn.setElement(2, 0x19);
+        nodeToEdit.getCanListener().message(learn);
+        assertTrue( nodeToEdit.getNodeInLearnMode(), "node in learn mode");
+        int sent = tcis.outbound.size();
+
+        nodeToEdit.getCanListener().reply(wrack());
+        assertEquals( sent, tcis.outbound.size(), "WRACK doesn't complete a teach to a VLCB node");
+
+        nodeToEdit.getCanListener().reply(grsp(CbusConstants.CBUS_EVLRN, CbusNodeCanListener.GRSP_OK));
+        JUnitUtil.waitFor(() -> tcis.outbound.size() > sent, "next EVLRN sent");
+        assertEquals( "[5f8] D2 00 7B 01 C8 02 FF", tcis.outbound.lastElement().toString(), "EV2 taught");
+    }
+
     /**
      * A node reporting fewer than 8 parameters must not cause an exception
      * when the parameters known from PNN / STAT are added.
@@ -423,6 +543,7 @@ public class CbusNodeCanListenerTest {
         memo.setProtocol(jmri.jmrix.can.CanConfigurationManager.MERGCBUS);
 
         memo.get(CbusPreferences.class).setNodeBackgroundFetchDelay(0);
+        memo.get(CbusPreferences.class).setVlcbCompleteWritesOnGrsp(false); // saved in the profile between tests
         nodeModel = memo.get(CbusConfigurationManager.class)
             .provide(CbusNodeTableDataModel.class);
 

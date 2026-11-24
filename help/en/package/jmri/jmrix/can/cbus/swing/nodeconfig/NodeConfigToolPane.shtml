@@ -155,6 +155,13 @@
           <li>Search for Command Stations on JMRI startup</li>
 
           <li>Search for nodes on JMRI startup</li>
+
+          <li>VLCB Modules: Complete Writes on GRSP
+            <p>When checked, each Node Variable write and event teach sent to a VLCB module is
+            treated as done when the module answers with GRSP, as VLCB specifies, instead of
+            WRACK. A failed write is still reported by CMDERR. CBUS modules are not affected. Off
+            by default.</p>
+          </li>
         </ul>
 
         <p>Options are saved between sessions on a per-profile basis.</p>
