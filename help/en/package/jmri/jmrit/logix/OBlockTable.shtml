@@ -250,9 +250,10 @@
         of the Block whose entrance is protected by the Signal.</li>
 
         <li><strong>Offset</strong>: (Optional) The distance added (or subtracted for negative
-        values) to the point where a speed change required by the Signal's Aspect should begin.
-        Often this equals the distance from where the mast of the signal is placed to where the gap
-        of the Block it protects is.</li>
+        values) to the room a warranted train leaves before the protected Block when it stops for
+        the Signal showing Stop. Often this equals the distance from where the mast of the signal is
+        placed to where the gap of the Block it protects is. It is not used when the Signal only
+        calls for a lower speed.</li>
 
         <li><strong>Units</strong>: The unit used to determine the offset length (in inches or
         centimeters, click to convert).</li>
@@ -264,9 +265,9 @@
       - if needed - prepares to change the speed before it reaches the <em>protected</em> Block.
       Any speed change is ramped down to the speed required by the Signal. The Warrant calculates
       when the speed ramp-down should begin using the parameters involved with the Speed Profile or
-      throttle factor of the engine (see <a href="Warrant.shtml#SpeedMap">Warrants</a>). The point
-      where the speed change should complete can be adjusted (+/-) by the above
-      <strong>Length</strong> amount, should that be desirable.</p>
+      throttle factor of the engine (see <a href="Warrant.shtml#SpeedMap">Warrants</a>). Where a
+      train stopping for the Signal comes to a stand can be adjusted (+/-) by the above
+      <strong>Offset</strong> amount, should that be desirable.</p>
 
       <p>Likewise, when the Signal indicates a Clear or increased speed from a stopped or reduced
       speed condition, the speed will be ramped up to the allowed or recorded speed.</p>

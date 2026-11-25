@@ -100,8 +100,10 @@
           direction, but to block travel in the FORWARD direction. Setting the state of direction
           sensors is done automatically by software in <a href=
           "../dispatcher/Dispatcher.shtml">Dispatcher</a> that allocates Sections.
-          <p>Note: Dispatcher can place direction sensors in SSL signal logic automatically when a
-          train is activated. Dispatcher will place direction sensors if it is provided with a
+          <p>Note: Dispatcher can place direction sensors in SSL signal logic automatically when an
+          automatic train is created, if <strong>Add Directions Sensors to SSL if missing</strong>
+          is checked in Dispatcher Options (the default). Dispatcher will place direction sensors if
+          it is provided with a
           Layout Editor panel and allowed to use its connectivity (required for automatic running).
           This allows using direction-based signaling even if the panel is stored with these
           sensors removed from signal logic.</p>

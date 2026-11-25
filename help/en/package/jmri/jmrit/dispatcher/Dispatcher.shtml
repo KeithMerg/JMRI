@@ -147,12 +147,9 @@
       <strong>Auto Release</strong> option is selected. The <strong>Dispatcher Window</strong> is
       discussed in detail <a href="#window">below</a>.</p>
 
-      <p><strong>Note:</strong> The current version of Dispatcher contains an automated allocation
-      option still under development. To request Dispatcher to attempt to automatically allocate
-      Sections to Active Trains, select the <strong>Auto Allocate</strong> box. <strong>Auto
-      Allocate</strong> (discussed in detail <a href="#autoallocate">below</a>) works fine for
-      single Active Trains, and for some cases of multiple Active Trains. Enhancements are planned
-      in future releases.</p>
+      <p>To have Dispatcher allocate Sections to Active Trains automatically, select the
+      <strong>Auto Allocate</strong> box. <strong>Auto Allocate</strong> is discussed in detail <a
+      href="#autoallocate">below</a>.</p>
 
       <h2 id="requirements">Dispatcher Requirements</h2>
 
@@ -188,7 +185,9 @@
           allow Dispatcher to be used for manually running trains.<br>
           Hardware occupancy detection is also optional for manual running trains. More on <a href=
           "../beantable/BlockTable.shtml">Blocks</a>.<br>
-          Automatic running of trains requires hardware blocks and hardware occupancy detection.
+          Automatic running of trains requires hardware blocks and hardware occupancy detection,
+          except in <a href="../beantable/BlockTable.shtml">ghost Blocks</a>, whose occupancy
+          Dispatcher simulates.
           For all Dispatcher use, blocking of mainline track on a Layout Editor panel is required.
           Dispatcher works best if hardware block occupancy detection is present, but it can be
           used to run trains manually without it.
@@ -830,13 +829,14 @@
       <p>The <strong>Auto Allocate</strong> option works cautiously. It will never allocate an
       <strong>OCCUPIED</strong> Section. It will never override a fast clock start time. It will
       attempt to avoid gridlock by looking ahead to see if a requested Section will be needed by
-      another Active Train that has started. When possible, it attempts to allocate three Sections
-      ahead of the current position of the head of each Active Train.</p>
+      another Active Train that has started. How far ahead of each Active Train it allocates is
+      chosen for that train in the <a href="NewTrain.shtml">Activate New Train</a> window: as far as
+      possible, to the next safe Section, or a number of Sections.</p>
 
       <p>The current version of <strong>Auto Allocate</strong> works fine for single Active Trains
-      and for multiple Active Trains whose Transits don't overlap. It has limited support for
-      simultaneous Active Trains that require the same Sections. Future versions will contain
-      enhanced support for multiple Active Trains.</p>
+      and for multiple Active Trains whose Transits don't overlap. For Active Trains that need the
+      same Sections, mark the passing places as safe Sections and allocate to them, or check
+      <strong>Prevent Deadlock</strong> in <a href="Options.shtml">Dispatcher Options</a>.</p>
 
       <p>The <strong>Auto Release</strong> check box, immediately above the <strong>Allocated
       Sections</strong> table, is used to switch on (checked) or off (unchecked) the automated
@@ -970,25 +970,30 @@
       town.</p>
 
       <p>Since all locomotives do not run the same, when an Auto Active Train is created, a
-      <strong>Loco Speed Compensation</strong> in the range of 50 to 150% is specified. This
-      Compensation factor multiplies all speed values immediately before the speed is sent to the
-      throttle (after the speed has been tested against the <em>maximum allowed speed</em>). For
+      <strong>Loco Speed Correction</strong> in the range of 10 to 200% is specified. This factor
+      multiplies all speed values before they are limited to the <em>maximum allowed speed</em>. For
       "normally" running locomotives, a speed factor of 100% is appropriate. For locomotives that
       run slower than "normal", use a factor greater than 100% and for trains that run faster than
       "normal", a factor less than 100% is best.</p>
 
-      <p>Three different methods are provided currently for stopping an Auto Active Train when it
-      needs to stop. If the Section has hardware stop Sensors, the train is halted when it reaches
-      the Stop Sensor for its direction of travel. If no Stop Sensors are available for the
-      Section, the train length is compared to the length of the Section to determine if the Auto
-      Active Train will fit in the Section. If the Auto Active Train will fit in the Section, and
-      if all cars of the train are detectable, the Auto Active Train is stopped when it exits the
-      Section previous to the current Section. If neither of the two methods apply, the train is
-      stopped when it enters the Section.<br>
+      <p>When an Auto Active Train needs to stop in a Section, Dispatcher chooses how, in this
+      order. A train with a speed profile that is to stop a distance into its destination Section,
+      or in a Section with a <strong>Stop Point</strong> (see below), slows over the distance to
+      that point. Otherwise, if the Section has a Stop Sensor for the direction of travel, and
+      <strong>Override stop sensors</strong> is not selected, the train is halted when it reaches
+      the Stop Sensor. Otherwise, with <strong>Use Speed Profile</strong> and <strong>Stop By Speed
+      Profile</strong>, it stops by its speed profile. Otherwise the train length is compared with
+      the length of the Section. If the train will fit, and its <a
+      href="NewTrain.shtml#trainDetectionOptions">Train Detection</a> is <strong>Entire
+      Train</strong> or <strong>Head and Tail</strong>, it is stopped when the Block behind the
+      track it needs becomes unoccupied: the last Block of the previous Section, or, if it doesn't
+      need the whole Section, the Block in this Section just before the part it needs. If the train
+      won't fit, or its detection is <strong>Head Only</strong>, it is stopped when it enters the
+      Section.<br>
       Stopping using a Stop Sensor is the most precise way to stop an Auto Active Train at a
       specific location. Stop Sensors need not be in place for all Sections, but their use for
       automatic station stops and passing tracks is strongly recommended.<br>
-      <span class="since">since 5.17.5</span>If a Stop Sensor fails, the train must not run on
+      <span class="since">since 5.19.1</span>If a Stop Sensor fails, the train must not run on
       out of its Section. While it waits for the Stop Sensor, it is stopped at once if it enters a
       Block just beyond the Section that was unoccupied and not allocated to another train. A
       train using <strong>Stop by distance into destination section</strong> is also stopped,
@@ -1024,7 +1029,9 @@
 
         <li>
           <p>The layout must be divided into Blocks, and each Block along the mainline must have
-          occupancy detection hardware, providing occupancy Sensors to JMRI.</p>
+          occupancy detection hardware, providing occupancy Sensors to JMRI. The exception is a very
+          short Block, such as a turnout Block, made a <a href="../beantable/BlockTable.shtml">ghost
+          Block</a>, whose occupancy Dispatcher simulates.</p>
         </li>
 
         <li>
@@ -1047,7 +1054,11 @@
 
         <li>
           <p>Auto Active Trains follow signals, requiring signals as part of the Layout Editor
-          panels. Hardware signals on the layout need not be physically present, but signals and
+          panels, unless the signal type in <a href="Options.shtml">Dispatcher Options</a> is
+          <strong>No Signals</strong> (Ad Hoc Transits always run with No Signals). With No Signals
+          a train runs at up to Normal speed while two or more of its Sections ahead are allocated,
+          at Medium speed with one, and stops at the end of its allocation. Hardware signals on the
+          layout need not be physically present, but signals and
           signal logic (Either SignalHeads &amp; SSL or SignalMasts &amp; SML) must be configured in
           the Layout Editor panels, and must be connected to the track at the proper block
           transition points.</p>
@@ -1060,8 +1071,9 @@
         </li>
 
         <li>
-          <p>All entry points and exit points from Sections in the Transit must have signals on the
-          Layout Editor panels. If Using Signal Heads/SSL then boundaries between Blocks in Sections
+          <p>Unless the signal type is <strong>No Signals</strong>, all entry points and exit points
+          from Sections in the Transit must have signals on the Layout Editor panels. If Using
+          Signal Heads/SSL then boundaries between Blocks in Sections
           should be signaled on the Layout Editor panels. Portions of the layout that are not in
           Sections in Transits only need those signals that are necessary to allow setup of signal
           logic, either SSL (Simple Signal Logic) or SML (Signal Mast Logic) for signals in
@@ -1078,7 +1090,9 @@
           <p>(SSL Only) All Sections must be configured with direction Sensors. When an Auto Active
           Train is created, Dispatcher will check that direction Sensors are present and are
           configured in signal logic of signals in all Sections of the Transit. Dispatcher will
-          place direction Sensors in signal logic if they are not found. <strong>Note:</strong>
+          place direction Sensors in signal logic if they are not found, unless <strong>Add
+          Directions Sensors to SSL if missing</strong> is unchecked in Dispatcher Options.
+          <strong>Note:</strong>
           Direction Sensors may be cleared from signal logic using a tool in the Section Table when
           not running automatic trains.</p>
         </li>
@@ -1101,7 +1115,9 @@
           present, the <em>virtual engineer</em> has no way of knowing when the last car has exited
           a Block. Without the train being fully detectable along its entire length, the Auto
           Active Train will not stop at acceptable locations, and waiting trains may allocate and
-          set turnouts before the undetectable train has passed.</p>
+          set turnouts before the undetectable train has passed. Where only the head, or the head
+          and tail, of a train are detected, choose that <a
+          href="NewTrain.shtml#trainDetectionOptions">Train Detection</a> option for it.</p>
         </li>
       </ul>
 

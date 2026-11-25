@@ -90,9 +90,7 @@
           <strong>Allocated Sections</strong> table. It is also equivalent to <strong>Auto
           Allocate</strong> in Dispatcher's <strong>Options</strong> menu. Checking it here, then
           saving Dispatcher Options (see below) will select Auto Allocate and Auto Release when
-          Dispatcher is started. <strong>Note: The current version of Dispatcher provides limited
-          support for automated allocation of Sections</strong>. Support will be enhanced in future
-          versions.</p>
+          Dispatcher is started.</p>
         </li>
 
         <li>
@@ -135,6 +133,14 @@
           <p>Check <strong>Trust Known State of Turnouts?</strong> to suppress sending of turnout
           commands if the known state already matches the desired state. This can be used where
           reliable turnout feedback is in place.</p>
+        </li>
+
+        <li>
+          <p>With Signal Heads/SSL, check <strong>Add Directions Sensors to SSL if missing</strong>
+          (checked by default) to have Dispatcher, when an automatic Active Train is created, place
+          the direction sensors of the Sections in its Transit in the signal logic of their signal
+          heads where they are missing. If it can't, the train is not created. See
+          <a href="../../../../html/tools/Sections.shtml">Sections</a>.</p>
         </li>
 
         <li>
@@ -199,7 +205,7 @@
           alternate color option, makes it easy for the dispatcher to see which Allocated Section
           is allocated to which Active Train when viewing a Layout Editor panel.</p>
 
-          <p><span class="since">since 5.17.5</span>A Block Contents icon shows the train a Block
+          <p><span class="since">since 5.19.1</span>A Block Contents icon shows the train a Block
           is allocated to in italics after an arrow, for example <em>&rarr; 47012</em>, until Block
           tracking places the train in the Block, and then shows it as usual, so you can see which
           trains are really in their Blocks. A Block that stays marked although it is occupied is
@@ -274,8 +280,7 @@
           Allocate</strong> option check box in Dispatcher's window above the <strong>Allocated
           Sections</strong> table. It is also is equivalent to an item in the <strong>Options
           Window</strong>. Automated dispatching may be turned on or off at any time. The item is
-          repeated here for convenience of the dispatcher. <strong>Note: Automated allocation of
-          Sections has limited support in the current version of Dispatcher.</strong></p>
+          repeated here for convenience of the dispatcher.</p>
         </li>
 
         <li>

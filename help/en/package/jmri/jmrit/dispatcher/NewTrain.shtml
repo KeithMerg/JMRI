@@ -465,7 +465,7 @@
           profile stops at the destination Section's <strong>Stop Point</strong>, if it has one (see
           <a href="../beantable/SectionAddEdit.shtml">Adding/Editing Sections</a>), and it does so
           wherever else it stops in a Section that has one.</p>
-          <p><span class="since">since 5.17.5</span>If the stop sensor fails, the train is stopped
+          <p><span class="since">since 5.19.1</span>If the stop sensor fails, the train is stopped
           when, by reckoning from its speed profile, it reaches the end of the section, or as soon as
           it enters a free block beyond it. See
           <a href="Dispatcher.shtml#automatic">Running trains automatically</a>.</p>
@@ -527,9 +527,12 @@
           are used if the section does not have a stopping sensor and <strong>Stop by Speed Profile</strong>
           is not enabled.</p>
 
-          <p>If the <strong>Entire Train</strong> detection option is selected and the train will fit
-          in the section, the train will stop when the previous section becomes UNOCCUPIED, otherwise
-          the train will stop on entry to the section.  Note: This uses <em>debounce timings</em>,
+          <p>If the <strong>Entire Train</strong> or <strong>Head and Tail</strong> detection option
+          is selected and the train will fit in the section, the train will stop when the Block
+          behind the track it needs becomes UNOCCUPIED: the last Block of the previous section, or,
+          if it doesn't need the whole section, the Block in this section just before the part it
+          needs. Otherwise the train will stop on entry to the section.  Note: This uses
+          <em>debounce timings</em>,
           which -if large- can result in the train over running the block if it only just fits.</p>
 
           <p>See also <strong><a href="#trainDetectionOptions">Train Detection</a></strong></p>

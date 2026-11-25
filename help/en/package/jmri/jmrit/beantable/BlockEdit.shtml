@@ -184,8 +184,9 @@
         <dd>
           <p>Displays the curvature selected for the track in the Block. Curvature is used for
           automatic running of trains, and need not be entered if trains will not be run automatically.
-          Curvature, if present, indicates to the computer that it should slow the train as it runs
-          through the Block. If <strong>None</strong> or <strong>Gradual</strong> are selected, an
+          Curvature is meant to tell the computer to slow the train as it runs through the Block,
+          but at present neither Dispatcher nor Warrants uses it. If <strong>None</strong> or
+          <strong>Gradual</strong> are selected, an
           automatic train will proceed at normal speed. <strong>Tight</strong> should be selected if
           the train should slow down some; <strong>Severe</strong> should be selected if the train
           should slow by a maximum amount. If the Block has variable curvature, the selection should

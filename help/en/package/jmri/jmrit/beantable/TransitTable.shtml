@@ -96,8 +96,9 @@
       <p>Transits support a variety of <strong><a href=
       "ViewSpecialActions.shtml">Actions</a></strong> that automatically happen when a Train is run
       through the Transit in Automatic mode. One or more <strong>Actions</strong> may be specified
-      with each Section in the Transit. <strong>Action</strong> are initiated when their associated
-      Section in the Transit is entered by the Automatically run Train.<br>
+      with each Section in the Transit. Each <strong>Action</strong> is set up when the
+      automatically run Train enters its Section in the Transit, and is performed when its
+      <strong>When</strong> condition occurs.<br>
       Each <strong>Action</strong> has two parts:</p>
 
       <ul>

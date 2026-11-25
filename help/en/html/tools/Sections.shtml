@@ -123,8 +123,9 @@
       manually added or removed using the Signal Mast Logic <strong>Sensor</strong> tab. Select the
       direction sensor that corresponds to the direction to the destination mast and set the
       desired state to INACTIVE. As indicated above, the direction sensors are normally ACTIVE.
-      This forces signal mast logic to set the mast aspect to Stop. When a transit is activated,
-      the Forward or Reverse direction sensors for the sections in the transit are set to INACTIVE.
+      This forces signal mast logic to set the mast aspect to Stop. As each Section of a Transit is
+      allocated to a train, its direction sensor for the direction of travel is set to INACTIVE, and
+      when it is released both are set ACTIVE again.
       This triggers signal mast logic to update the signal mast aspect.</p>
 
       <p>Also optionally each Section may have two <em>stopping sensors</em> that indicate when a
