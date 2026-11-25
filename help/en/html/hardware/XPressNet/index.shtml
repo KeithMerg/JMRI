@@ -769,6 +769,12 @@
         <li>Restart the program. You should be up and running.</li>
       </ol>
 
+      <p>On an XpressNet Simulator connection, <a href="../../tools/simulatedtrains/index.shtml">Simulated
+      Trains</a> obey JMRI's XpressNet throttles and report occupancy on its sensors with feedback
+      broadcasts, as feedback modules do: sensor XS1 is input 1 of module 0, and so on. To leave the
+      Simulator out of simulated trains, set <strong>Simulated trains</strong> in the Additional
+      Connection Settings to <strong>leave this connection out</strong>.</p>
+
       <h3 id="connectZtc">Connecting using a ZTC ZTC640</h3>
 
       <ol>

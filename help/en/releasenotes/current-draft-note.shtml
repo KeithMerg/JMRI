@@ -97,7 +97,11 @@
 
         <h4>Lenz XPressNet</h4>
             <ul>
-                <li></li>
+                <li>Simulated trains obey an XpressNet Simulator connection's throttles and report
+                    on its sensors with feedback broadcasts. The connection's Simulated trains
+                    setting can leave it out.</li>
+                <li>Starting an XpressNet connection could hang for ever when the command station
+                    answered its version request very quickly, as the XpressNet Simulator can.</li>
             </ul>
 
         <h4>LocoNet</h4>

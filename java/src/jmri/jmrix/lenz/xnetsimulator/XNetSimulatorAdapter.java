@@ -94,6 +94,7 @@ public class XNetSimulatorAdapter extends XNetSimulatorPortController implements
             return;
         }
         csStatus = CS_NORMAL_MODE;
+        addSimulatedTrainsOption();
     }
 
     @Override
@@ -201,9 +202,19 @@ public class XNetSimulatorAdapter extends XNetSimulatorPortController implements
         for (;;) {
             XNetMessage m = readMessage();
             log.debug("Simulator Thread received message {}", m);
+            synchronized (feedbackLock) {
+                replying = true;
+            }
             XNetReply r = generateReply(m);
-            writeReply(r);
-            log.debug("Simulator Thread sent Reply {}", r);
+            synchronized (feedbackLock) {
+                writeReply(r);
+                log.debug("Simulator Thread sent Reply {}", r);
+                for (XNetReply f : feedbackWaiting) {
+                    writeReply(f);
+                }
+                feedbackWaiting.clear();
+                replying = false;
+            }
         }
     }
 
@@ -224,9 +235,136 @@ public class XNetSimulatorAdapter extends XNetSimulatorPortController implements
         return (msg);
     }
 
+    /**
+     * Told of each message the simulated command station receives, as
+     * simulated trains need them.
+     *
+     * @since 5.19.2
+     */
+    @FunctionalInterface
+    public interface MessageListener {
+
+        /**
+         * @param message   the message's bytes in hexadecimal, separated by
+         *                  spaces, such as "E4 13 00 03 C0 34"
+         * @param timeNanos when it was received, on the
+         *                  {@link System#nanoTime()} scale
+         */
+        void messageReceived(String message, long timeNanos);
+    }
+
+    private final java.util.List<MessageListener> messageListeners =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /**
+     * @param listener to be told of each message received
+     * @since 5.19.2
+     */
+    public void addMessageListener(MessageListener listener) {
+        messageListeners.add(listener);
+    }
+
+    /**
+     * @param listener to be told no more
+     * @since 5.19.2
+     */
+    public void removeMessageListener(MessageListener listener) {
+        messageListeners.remove(listener);
+    }
+
+    /** Guards the feedback state, and writing, between threads. */
+    private final Object feedbackLock = new Object();
+    /** The inputs of each feedback module, one bit per input, input 1 in bit 0. */
+    private final int[] feedbackInputs = new int[XNET_FEEDBACK_MODULES];
+    /** Feedback broadcasts held while a message is answered, sent after its reply. */
+    private final java.util.List<XNetReply> feedbackWaiting = new java.util.ArrayList<>();
+    private boolean replying = false;
+    private static final int XNET_FEEDBACK_MODULES = 256;
+
+    /**
+     * Set a feedback input's level without reporting it, as it is before
+     * anything changes: the inputs of a feedback module are all reported
+     * together, four at a time, so each must start right.
+     *
+     * @param input  the input's number, 1 to 2048, as an XpressNet sensor
+     *               numbers it
+     * @param active true for occupied
+     * @throws IllegalArgumentException if the input is out of range
+     * @since 5.19.2
+     */
+    public void setFeedback(int input, boolean active) {
+        if (input < 1 || input > XNET_FEEDBACK_MODULES * 8) {
+            throw new IllegalArgumentException("feedback input " + input + " not 1 to " + XNET_FEEDBACK_MODULES * 8);
+        }
+        int module = (input - 1) / 8;
+        int bit = (input - 1) % 8;
+        synchronized (feedbackLock) {
+            if (active) {
+                feedbackInputs[module] |= 1 << bit;
+            } else {
+                feedbackInputs[module] &= ~(1 << bit);
+            }
+        }
+    }
+
+    /**
+     * Report a feedback input, as a feedback module does: the command station
+     * sends a feedback broadcast with the four inputs of that half of the
+     * module. If a message is being answered, the broadcast follows its
+     * reply. As from a real command station, a broadcast can still arrive
+     * while JMRI waits for the reply to a message the simulator hasn't read
+     * yet.
+     *
+     * @param input  the input's number, 1 to 2048, as an XpressNet sensor
+     *               numbers it: input 1 to 8 on module 0, and so on
+     * @param active true for occupied
+     * @throws IllegalArgumentException if the input is out of range
+     * @since 5.19.2
+     */
+    public void reportFeedback(int input, boolean active) {
+        int module = (input - 1) / 8;
+        int bit = (input - 1) % 8;
+        synchronized (feedbackLock) {
+            setFeedback(input, active);
+            boolean upper = bit >= 4;
+            XNetReply r = new XNetReply();
+            r.setOpCode(XNetConstants.BC_FEEDBACK | 0x02);
+            r.setElement(1, module);
+            // ITTNZZZZ: no turnout information, type 10 (feedback module), nibble, inputs
+            r.setElement(2, 0x40 | (upper ? 0x10 : 0) | ((feedbackInputs[module] >> (upper ? 4 : 0)) & 0x0F));
+            r.setElement(3, 0x00); // set the parity byte to 0
+            r.setParity();
+            if (replying) {
+                feedbackWaiting.add(r);
+            } else {
+                writeReply(r);
+            }
+        }
+    }
+
+    /**
+     * Tell the message listeners of a message received.
+     *
+     * @param m the message, or null if none could be read
+     */
+    private void tellListeners(@javax.annotation.CheckForNull XNetMessage m) {
+        if (m == null || messageListeners.isEmpty()) {
+            return;
+        }
+        long now = System.nanoTime();
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < m.getNumDataElements(); i++) {
+            text.append(i == 0 ? "" : " ").append(String.format("%02X", m.getElement(i) & 0xFF));
+        }
+        for (MessageListener l : messageListeners) {
+            l.messageReceived(text.toString(), now);
+        }
+    }
+
     // This is the heart of the simulation. It translates an
     // incoming XNetMessage into an outgoing XNetReply.
     private XNetReply generateReply(XNetMessage m) {
+        tellListeners(m);
         XNetReply reply = new XNetReply();
         switch (m.getElement(0) & 0xff) {
 

@@ -344,13 +344,16 @@ public class XNetInitializationManager {
         /* spawn a thread to request version information and wait for the
          command station to respond */
         log.debug("Starting XpressNet Initialization Process");
-        new XNetInitializer(this);
 
         // Since we can't currently reconfigure the user interface after
         // initialization, We need to wait for the initialization thread
         // to finish before we can continue.  The wait  can be removed IF
         // we revisit the GUI initialization process.
         synchronized (this) {
+            // started while holding the lock, so that its notify, which
+            // needs the lock, can't come before the wait: a fast reply
+            // otherwise leaves the wait to go on for ever
+            new XNetInitializer(this);
             log.debug("start wait");
             new jmri.util.WaitHandler(this);
             log.debug("end wait");
