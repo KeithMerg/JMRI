@@ -119,6 +119,7 @@ public class SimulatorAdapter extends NcePortController implements Runnable {
         option1Name = "Eprom"; // NOI18N
         options.put(option1Name, new Option(Bundle.getMessage("EpromLabel"), option1Values, false));
         setOptionState(option1Name, option1Values[1]);
+        addSimulatedTrainsOption();
     }
 
     /**
@@ -313,10 +314,126 @@ public class SimulatorAdapter extends NcePortController implements Runnable {
     }
 
     /**
+     * Told of each message the simulated command station receives, as
+     * simulated trains need them.
+     *
+     * @since 5.19.2
+     */
+    @FunctionalInterface
+    public interface MessageListener {
+
+        /**
+         * @param message   the message's bytes in hexadecimal, separated by
+         *                  spaces, such as "A2 00 03 04 3F"
+         * @param timeNanos when it was received, on the
+         *                  {@link System#nanoTime()} scale
+         */
+        void messageReceived(String message, long timeNanos);
+    }
+
+    private final java.util.List<MessageListener> messageListeners =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /**
+     * @param listener to be told of each message received
+     * @since 5.19.2
+     */
+    public void addMessageListener(MessageListener listener) {
+        messageListeners.add(listener);
+    }
+
+    /**
+     * @param listener to be told no more
+     * @since 5.19.2
+     */
+    public void removeMessageListener(MessageListener listener) {
+        messageListeners.remove(listener);
+    }
+
+    private static final int AIU_COUNT = 64;
+    /** Guards the AIU inputs. */
+    private final Object aiuLock = new Object();
+    /**
+     * Each AIU's inputs, bit 0 for input 1, 0 for active, as a poll reply
+     * gives them; null until set, when the polls are answered with fixed
+     * values.
+     */
+    private int[] aiuInputs = null;
+    /** Each AIU's inputs as last given in a poll reply, for the changes. */
+    private int[] aiuPolled = null;
+
+    /**
+     * Set an AIU input, as a detector wired to it does: the next poll of
+     * that AIU reports it. Until the first input is set, the polls are
+     * answered with fixed values, as before; from then on, every AIU's
+     * inputs start inactive.
+     *
+     * @param sensor the input as an NCE sensor numbers it: AIU (sensor / 16)
+     *               + 1, input (sensor % 16) + 1, inputs 1 to 14
+     * @param active true for occupied
+     * @throws IllegalArgumentException if the AIU or input is out of range
+     * @since 5.19.2
+     */
+    public void setAiuInput(int sensor, boolean active) {
+        int aiu = sensor / 16 + 1;
+        int bit = sensor % 16;
+        if (sensor < 0 || aiu >= AIU_COUNT || bit > 13) {
+            throw new IllegalArgumentException("not an AIU input: " + sensor);
+        }
+        synchronized (aiuLock) {
+            if (aiuInputs == null) {
+                aiuInputs = new int[AIU_COUNT];
+                aiuPolled = new int[AIU_COUNT];
+                Arrays.fill(aiuInputs, 0xFFFF);
+                Arrays.fill(aiuPolled, 0xFFFF);
+            }
+            if (active) {
+                aiuInputs[aiu] &= ~(1 << bit);
+            } else {
+                aiuInputs[aiu] |= 1 << bit;
+            }
+        }
+    }
+
+    /**
+     * Answer an AIU poll from the inputs set, if any have been.
+     *
+     * @return false if no input has been set
+     */
+    private boolean aiuReply(NceMessage m, NceReply reply, boolean withChanges) {
+        int aiu = m.getElement(1);
+        synchronized (aiuLock) {
+            if (aiuInputs == null || aiu < 0 || aiu >= AIU_COUNT) {
+                return false;
+            }
+            int now = aiuInputs[aiu];
+            int changes = now ^ aiuPolled[aiu];
+            aiuPolled[aiu] = now;
+            reply.setElement(0, (now >> 8) & 0xFF);
+            reply.setElement(1, now & 0xFF);
+            if (withChanges) {
+                reply.setElement(2, (changes >> 8) & 0xFF);
+                reply.setElement(3, changes & 0xFF);
+            }
+            return true;
+        }
+    }
+
+    /**
      * This is the heart of the simulation. It translates an incoming NceMessage
      * into an outgoing NceReply.
      */
     private NceReply generateReply(NceMessage m) {
+        if (!messageListeners.isEmpty()) {
+            long now = System.nanoTime();
+            StringBuilder text = new StringBuilder();
+            for (int i = 0; i < m.getNumDataElements(); i++) {
+                text.append(i == 0 ? "" : " ").append(String.format("%02X", m.getElement(i) & 0xFF));
+            }
+            for (MessageListener l : messageListeners) {
+                l.messageReceived(text.toString(), now);
+            }
+        }
         NceReply reply = new NceReply(this.getSystemConnectionMemo().getNceTrafficController());
         int command = m.getElement(0);
         if (command < 0x80) {  // NOTE: NCE command station does not respond to
@@ -337,6 +454,9 @@ public class SimulatorAdapter extends NcePortController implements Runnable {
                 reply.setElement(1, 0x30);
                 break;
             case NceMessage.READ_AUI4_CMD: // Read AUI 4 byte response
+                if (aiuReply(m, reply, true)) {
+                    break;
+                }
                 reply.setElement(0, 0xFF);   // fixed data for now
                 reply.setElement(1, 0xFF);   // fixed data for now
                 reply.setElement(2, 0x00);   // fixed data for now
@@ -351,6 +471,9 @@ public class SimulatorAdapter extends NcePortController implements Runnable {
                 readMemory(m, reply, 16);
                 break;
             case NceMessage.READ_AUI2_CMD: // Read AUI 2 byte response
+                if (aiuReply(m, reply, false)) {
+                    break;
+                }
                 reply.setElement(0, 0x00);   // fixed data for now
                 reply.setElement(1, 0x00);   // fixed data for now
                 break;

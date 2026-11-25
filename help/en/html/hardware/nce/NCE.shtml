@@ -68,6 +68,11 @@
       	<li>Simulator</li>
       	<li>PH5 USB</li>
       </ul>
+
+      <p>On an NCE Simulator connection, <a href="../../tools/simulatedtrains/index.shtml">Simulated
+      Trains</a> obey JMRI's NCE throttles and set its AIU sensors, given when JMRI next polls the AIU.
+      To leave the Simulator out of simulated trains, set <strong>Simulated trains</strong> in the
+      Additional Connection Settings to <strong>leave this connection out</strong>.</p>
       
       <h2 id="limitations">Limitations</h2>
 
