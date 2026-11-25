@@ -17,7 +17,9 @@ import org.openide.util.lookup.ServiceProvider;
 /**
  * CBUS's part in simulated trains: for each CAN Simulation connection, its
  * simulated command stations' speed commands and its CBUS sensors' detection.
- * A connection to a real bus is never offered, even if it has a simulator.
+ * A connection to a real bus is never offered, even if it has a simulator,
+ * nor is a CAN Simulation connection whose Simulated trains setting leaves it
+ * out.
  *
  * @author Keith Bruce Copyright (C) 2026
  * @since 5.19.1
@@ -70,7 +72,7 @@ public class CbusSimulationAdapter implements SimulationAdapter {
     private static List<CbusSimulator> simulators() {
         List<CbusSimulator> list = new ArrayList<>();
         for (CbusSimulator s : InstanceManager.getList(CbusSimulator.class)) {
-            if (s.isOnCanSimulation()) {
+            if (s.isOnCanSimulation() && !s.isLeftOutOfSimulatedTrains()) {
                 list.add(s);
             }
         }

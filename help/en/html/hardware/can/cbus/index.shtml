@@ -150,7 +150,10 @@
           <li>
             <a href=
             "../../../../package/jmri/jmrix/can/cbus/swing/simulator/SimulatorPane.shtml">Network
-            Item simulation</a> - Simulates CBUS Command stations and responds to event requests
+            Item simulation</a> - Simulates CBUS Command stations and responds to event requests.
+            On a CAN Simulation connection, <a href="../../../tools/simulatedtrains/index.shtml">Simulated
+            Trains</a> obey its command stations and set its CBUS sensors, unless the connection's
+            <strong>Simulated trains</strong> setting, among its additional settings, leaves it out.
           </li>
 
           <li>

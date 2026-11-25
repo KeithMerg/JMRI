@@ -38,6 +38,40 @@ public class CbusSimulationAdapterTest {
         Assertions.assertTrue(new CbusSimulationAdapter().getDetectorOutputs().isEmpty());
     }
 
+    /**
+     * @param memo a connection's memo
+     * @return the connection's port
+     */
+    private static jmri.jmrix.PortAdapter portOf(CanSystemConnectionMemo memo) {
+        for (jmri.jmrix.ConnectionConfig c : jmri.InstanceManager.getDefault(
+                jmri.jmrix.ConnectionConfigManager.class).getConnections()) {
+            jmri.jmrix.PortAdapter p = c.getAdapter();
+            if (p != null && p.getSystemConnectionMemo() == memo) {
+                return p;
+            }
+        }
+        throw new IllegalStateException("no connection for " + memo.getUserName());
+    }
+
+    @Test
+    public void testNotOfferedWhenTheSettingLeavesItOut() {
+        CanSystemConnectionMemo a = CbusSimulationTestUtil.addCanSimulation("M");
+        try {
+            jmri.jmrix.PortAdapter port = portOf(a);
+            CbusSimulator sa = a.get(CbusSimulator.class);
+            Assertions.assertFalse(sa.isLeftOutOfSimulatedTrains(), "used by default");
+            Assertions.assertEquals(1, new CbusSimulationAdapter().getSpeedSources().size());
+            String[] choices = port.getOptionChoices(jmri.jmrix.AbstractPortController.SIMULATED_TRAINS_OPTION);
+            port.setOptionState(jmri.jmrix.AbstractPortController.SIMULATED_TRAINS_OPTION, choices[1]);
+            Assertions.assertTrue(sa.isLeftOutOfSimulatedTrains());
+            Assertions.assertTrue(new CbusSimulationAdapter().getSpeedSources().isEmpty(), "no speed source");
+            Assertions.assertTrue(new CbusSimulationAdapter().getDetectorOutputs().isEmpty(), "no sensor output");
+            Assertions.assertTrue(new CbusSimulationAdapter().getReporterOutputs().isEmpty(), "no reporter output");
+        } finally {
+            CbusSimulationTestUtil.dispose(a);
+        }
+    }
+
     @Test
     public void testNeverOffersAConnectionToARealBus() {
         CanSystemConnectionMemo memo = new CanSystemConnectionMemo();

@@ -103,6 +103,26 @@ public class CbusSimulator implements jmri.Disposable {
     }
 
     /**
+     * @return true if this simulator's CAN Simulation connection is set to
+     *         be left out of simulated trains
+     * @since 5.19.2
+     */
+    public boolean isLeftOutOfSimulatedTrains() {
+        jmri.jmrix.ConnectionConfigManager ccm = jmri.InstanceManager.getNullableDefault(
+                jmri.jmrix.ConnectionConfigManager.class);
+        if (ccm == null) {
+            return false;
+        }
+        for (jmri.jmrix.ConnectionConfig c : ccm.getConnections()) {
+            jmri.jmrix.PortAdapter a = c.getAdapter();
+            if (a instanceof jmri.jmrix.AbstractPortController && a.getSystemConnectionMemo() == memo) {
+                return !((jmri.jmrix.AbstractPortController) a).isForSimulatedTrains();
+            }
+        }
+        return false;
+    }
+
+    /**
      * Speed commands for simulated trains, from this simulator's command
      * stations. Made when first asked for, and kept until disposed.
      *

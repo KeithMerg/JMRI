@@ -18,6 +18,7 @@ public class Port extends AbstractSerialPortController {
         option1Name = "Protocol"; // NOI18N
         options.put(option1Name, new Option(Bundle.getMessage("ConnectionProtocol"), jmri.jmrix.can.ConfigurationManager.getSystemOptions()));
         mPort = "(none)"; // is hidden from user in connection config UI
+        addSimulatedTrainsOption();
     }
 
     @Override
