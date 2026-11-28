@@ -39,7 +39,9 @@ public class CbusReporter extends AbstractRailComReporter implements CanListener
      * Should all CbusReporters clear themselves after a timeout?
      * <p>
      * Default behavior is to not timeout; this is public access
-     * so it can be updated from a script
+     * so it can be updated from a script. Each Reporter's Clear CBUS
+     * Reporter property, in the Reporter Table, does the same for that
+     * Reporter, with a chosen delay.
      */
     public static boolean eraseOnTimeoutAll = false;
 
@@ -336,12 +338,31 @@ public class CbusReporter extends AbstractRailComReporter implements CanListener
         return (returnVal==null ? false : returnVal);
     }
 
+    /**
+     * Get how long after the last read this Reporter clears its report, as
+     * chosen in its Clear CBUS Reporter property.
+     * <p>
+     * Defaults to never.
+     * @return the delay in milliseconds; 0 for never.
+     */
+    public int getClearDelay() {
+        Object chosen = getProperty(CbusReporterManager.CBUS_CLEAR_DESCRIPTOR_KEY);
+        for (int i = 0; i < CbusReporterManager.CBUS_CLEAR_CHOICES.length; i++) {
+            if (CbusReporterManager.CBUS_CLEAR_CHOICES[i].equals(chosen)) {
+                return CbusReporterManager.CBUS_CLEAR_DELAYS[i];
+            }
+        }
+        return 0;
+    }
+
     // delay can be set to non-null memo when older constructor fully deprecated.
     private void startTimeout(IdTag tag){
+        int ownDelay = getClearDelay();
         // only timeout when enabled
-        if (! eraseOnTimeoutAll && ! eraseOnTimeoutThisReporter) return;
+        if (! eraseOnTimeoutAll && ! eraseOnTimeoutThisReporter && ownDelay == 0) return;
 
-        int delay = (_memo==null ? 2000 : ((CbusReporterManager)_memo.get(jmri.ReporterManager.class)).getTimeout() );
+        int delay = ownDelay > 0 ? ownDelay
+                : (_memo==null ? 2000 : ((CbusReporterManager)_memo.get(jmri.ReporterManager.class)).getTimeout() );
         // a later read restarts the timeout, also when it is the same tag again
         final int generation = ++timeoutGeneration;
         ThreadingUtil.runOnLayoutDelayed( () -> {

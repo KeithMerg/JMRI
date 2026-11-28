@@ -76,7 +76,7 @@ public class CbusReporterManagerTest extends jmri.managers.AbstractReporterMgrTe
     public void testGetKnownBeanProperties() {
 
         List<NamedBeanPropertyDescriptor<?>> cbrepproplist =  l.getKnownBeanProperties();
-        assertEquals(2,cbrepproplist.size(),"2 properties at present");
+        assertEquals(3,cbrepproplist.size(),"3 properties at present");
 
         NamedBeanPropertyDescriptor<?> nbpd = cbrepproplist.get(0);
         assertEquals(CbusReporterManager.CBUS_REPORTER_DESCRIPTOR_KEY,nbpd.getColumnHeaderText(),
@@ -102,6 +102,13 @@ public class CbusReporterManagerTest extends jmri.managers.AbstractReporterMgrTe
 
         assertNotEquals(cbrepproplist.get(0),nbpd,"Equals different");
 
+        nbpd = cbrepproplist.get(2);
+        assertEquals(CbusReporterManager.CBUS_CLEAR_DESCRIPTOR_KEY,nbpd.getColumnHeaderText(),
+                "Column Header matches clear descriptor key");
+        assertTrue(nbpd.isEditable(l.provideReporter("123")),"clear Editable if CBUS Reporter");
+        assertEquals(CbusReporterManager.CBUS_CLEAR_NEVER,nbpd.defaultValue,"Never clear unless chosen");
+        assertEquals(6,((SelectionPropertyDescriptor)nbpd).getOptions().length,"Never and five delays");
+
     }
 
     @Test
@@ -121,14 +128,14 @@ public class CbusReporterManagerTest extends jmri.managers.AbstractReporterMgrTe
         ProxyManager<Reporter> proxy = (ProxyManager<Reporter>) reporterManager;
 
         assertEquals(2,proxy.getManagerList().size(),"2 Managers found, l + Internal");
-        assertEquals(2,proxy.getKnownBeanProperties().size(),"2 properties found");
+        assertEquals(3,proxy.getKnownBeanProperties().size(),"3 properties found");
 
         proxy.addManager(ll);
 
         assertEquals(3,proxy.getManagerList().size(),"3 Managers found, I, l, ll");
         assertTrue(proxy.getManagerList().contains(l),"M in list");
         assertTrue(proxy.getManagerList().contains(ll),"M2 in list");
-        assertEquals(2,proxy.getKnownBeanProperties().size(),"Still 2 properties found");
+        assertEquals(3,proxy.getKnownBeanProperties().size(),"Still 3 properties found");
 
         ll.dispose();
         otherTcis.terminateThreads();

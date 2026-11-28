@@ -459,6 +459,51 @@ public class CbusReporterTest extends jmri.implementation.AbstractReporterTestBa
 
     }
 
+    @Test
+    public void testClearDelayDefaultNever() {
+        assertEquals(0, ((CbusReporter) r).getClearDelay(), "keeps the last tag unless chosen");
+        r.setProperty(CbusReporterManager.CBUS_CLEAR_DESCRIPTOR_KEY, "5 s");
+        assertEquals(5000, ((CbusReporter) r).getClearDelay());
+        r.setProperty(CbusReporterManager.CBUS_CLEAR_DESCRIPTOR_KEY, CbusReporterManager.CBUS_CLEAR_NEVER);
+        assertEquals(0, ((CbusReporter) r).getClearDelay());
+        assertTrue(memo.get(ReporterManager.class).getKnownBeanProperties().stream()
+                .anyMatch(d -> d.propertyKey.equals(CbusReporterManager.CBUS_CLEAR_DESCRIPTOR_KEY)),
+                "shown as a Reporter Table column");
+    }
+
+    private CanReply tagRead() {
+        CanReply m = new CanReply(tcis.getCanid());
+        m.setNumDataElements(8);
+        m.setElement(0, CbusConstants.CBUS_DDES);
+        m.setElement(1, 0x00);
+        m.setElement(2, 0x01); // reporter 1
+        m.setElement(3, 0x30);
+        m.setElement(4, 0x39);
+        m.setElement(5, 0x31);
+        m.setElement(6, 0x30);
+        m.setElement(7, 0xAB);
+        return m;
+    }
+
+    @Test
+    public void testClearsAfterTheChosenDelay() {
+        r.setProperty(CbusReporterManager.CBUS_CLEAR_DESCRIPTOR_KEY, "1 s");
+        long start = System.currentTimeMillis();
+        ((CbusReporter) r).reply(tagRead());
+        assertNotNull(r.getCurrentReport(), "the tag is reported");
+        JUnitUtil.waitFor(() -> r.getCurrentReport() == null, "cleared after the chosen delay");
+        assertTrue(System.currentTimeMillis() - start >= 900, "not before the delay");
+    }
+
+    @Test
+    public void testKeepsTheTagWhenNever() {
+        CbusReporterManager rm = (CbusReporterManager) memo.get(ReporterManager.class);
+        rm.setTimeout(30);
+        ((CbusReporter) r).reply(tagRead());
+        JUnitUtil.waitFor(100);
+        assertNotNull(r.getCurrentReport(), "kept, as before, with Never chosen");
+    }
+
     private TrafficControllerScaffold tcis;
     private CanSystemConnectionMemo memo = null;
 

@@ -3,6 +3,9 @@
 
 # You can restore the prior behavior by running this script.
 # CBus Reporters will then clear themselves after a short delay.
+#
+# Since JMRI 5.19.2 you can instead choose, for each Reporter, when it clears
+# in the Reporter Table's "Clear CBUS Reporter" column, without a script.
 
 import jmri
 

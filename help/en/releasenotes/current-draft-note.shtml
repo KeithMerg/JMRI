@@ -42,6 +42,11 @@
                     node table and the tabs no longer writes all of CBUS's
                     preferences to disk for every pixel it moves. Where it
                     is left is saved once it stops.</li>
+                <li>CBUS Reporters can clear their report a chosen time after
+                    the last tag read: choose it in the Reporter Table's new
+                    Clear CBUS Reporter column (Never, as before, unless
+                    chosen). The CbusReporterTimeoutControl.py script is no
+                    longer needed.</li>
                 <li></li>
             </ul>
 

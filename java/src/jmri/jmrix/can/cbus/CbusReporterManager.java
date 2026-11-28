@@ -130,6 +130,19 @@ public class CbusReporterManager extends AbstractReporterManager implements CanL
 
     protected static final String CBUS_MAINTAIN_SENSOR_DESCRIPTOR_KEY = "Maintain CBUS Sensor"; // NOI18N
 
+    /**
+     * Property key of when a CbusReporter clears its report after hearing a
+     * tag: never, or a delay after the last read.
+     */
+    protected static final String CBUS_CLEAR_DESCRIPTOR_KEY = "Clear CBUS Reporter"; // NOI18N
+    protected static final String CBUS_CLEAR_NEVER = "Never"; // NOI18N
+    static final String[] CBUS_CLEAR_CHOICES = {CBUS_CLEAR_NEVER, "1 s", "2 s", "5 s", "10 s", "30 s"}; // NOI18N
+    static final int[] CBUS_CLEAR_DELAYS = {0, 1000, 2000, 5000, 10000, 30000};
+    static final String[] CBUS_CLEAR_TIPS = {
+        "Keep the last tag until another is read", "Clear 1 second after the last read", // NOI18N
+        "Clear 2 seconds after the last read", "Clear 5 seconds after the last read", // NOI18N
+        "Clear 10 seconds after the last read", "Clear 30 seconds after the last read"}; // NOI18N
+
     @Override
     @Nonnull
     public List<NamedBeanPropertyDescriptor<?>> getKnownBeanProperties() {
@@ -150,6 +163,17 @@ public class CbusReporterManager extends AbstractReporterManager implements CanL
             @Override
             public String getColumnHeaderText() {
                 return CBUS_MAINTAIN_SENSOR_DESCRIPTOR_KEY;
+            }
+            @Override
+            public boolean isEditable(NamedBean bean) {
+                return (bean instanceof CbusReporter);
+            }
+        });
+        l.add(new SelectionPropertyDescriptor(
+            CBUS_CLEAR_DESCRIPTOR_KEY, CBUS_CLEAR_CHOICES, CBUS_CLEAR_TIPS, CBUS_CLEAR_NEVER) {
+            @Override
+            public String getColumnHeaderText() {
+                return CBUS_CLEAR_DESCRIPTOR_KEY;
             }
             @Override
             public boolean isEditable(NamedBean bean) {

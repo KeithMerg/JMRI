@@ -217,6 +217,18 @@
         <p>This means that a reporter created via a number of 77 will respond to both DDES device
         77 and ACDAT of node 77.</p>
 
+        <h5 id="reporterClear">Clearing a Reporter<span class="since">since 5.19.2</span></h5>
+
+        <p>CBUS RFID readers do not say when a tag has gone, so a CBUS Reporter keeps the last
+        tag it heard until another is read. To have a Reporter clear its report after a delay
+        instead, choose the delay in its <strong>Clear CBUS Reporter</strong> column in the
+        Reporter Table, shown by checking <strong>Show System-specific columns</strong> below the
+        table: Never (the default), or 1, 2, 5, 10 or 30 seconds after the last read. A
+        tag read again restarts the delay. With <strong>Maintain CBUS Sensor</strong> checked,
+        the Reporter's Sensor goes Inactive when the report clears, so it can be used for
+        occupancy. Both are saved with the Reporter. This replaces the
+        CbusReporterTimeoutControl.py script, which still works.</p>
+
         <p>Reporters are saved in your main panel file, along with turnouts and sensors etc.</p>
 
         <p>ID Tags cross-session automatically, no saving is necessary.</p>
