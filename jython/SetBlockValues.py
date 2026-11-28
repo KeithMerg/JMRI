@@ -1,5 +1,7 @@
 # SetBlockValues.py -- Find occupied blocks without values and prompt for the value, if any.
 # Author:  Dave Sand, based on a script by Jason Janzen
+#
+# Since JMRI 5.19.2 the Block Table's Values > Name Trains in Occupied Blocks does this without a script.
 
 # Setup:
 #  - Set the SensorName variable to the name of the sensor which will be used to trigger processing.

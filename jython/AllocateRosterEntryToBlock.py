@@ -7,6 +7,8 @@
 #
 # Components based on Bob Jacobsen's and Nigel Cliffe, scripts in JMRI distribution, 
 # and comments on JMRI-Users group 
+#
+# Since JMRI 5.19.2 the Block Table's Values > Name Trains in Occupied Blocks puts a Roster entry in a Block without a script.
 
 import javax.swing
 import jmri

@@ -6,6 +6,8 @@
 # file from one run to the next.
 #
 # Bob Jacobsen   (C) 2026
+#
+# Since JMRI 5.19.2 the Block Table's Values > Clear Values does this without a script.
 
 for block in blocks.getNamedBeanSet() :
     block.setValue("")

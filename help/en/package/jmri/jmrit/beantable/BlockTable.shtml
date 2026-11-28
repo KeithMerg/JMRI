@@ -273,6 +273,15 @@
           dialog is displayed with details and requires confirmation by clicking on <strong>Remove</strong>.</p>
 
           <img src="images/BlocksDeletePaths.png" alt="Block delete paths dialog">
+
+          <p id="blockDetails"><span class="since">since 5.19.2</span><strong>Paths &rArr; Block
+          Details&hellip;</strong> shows what is known about one Block in one place: its state,
+          Sensor, value, length and settings; each of its Paths, with the Turnout settings it needs
+          and, on a Layout Editor panel, the Signal Mast or Signal Head facing from this Block into
+          the next; the Sections and Transits it is in; and where it is used, as Tools &rArr; Where
+          Used lists it. Blocks, Sensors, Turnouts and signals are shown by their display names.
+          <strong>Copy</strong> puts the text on the clipboard, to paste into a message or a support
+          question. This replaces the BlockLister.py script.</p>
         </dd>
 
         <dt id="block_speed_menu">Speeds</dt>
@@ -306,6 +315,20 @@
           <p><span class="since">since 5.15.1</span>The <strong>Reload Block Values</strong> menu
           item provides the ability to reload the block values on demand.  This can be useful when
           the track power was not on during PanelPro startup.</p>
+
+          <p id="nameTrains"><span class="since">since 5.19.2</span><strong>Name Trains in
+          Occupied Blocks&hellip;</strong> lists the occupied Blocks that have no value, as at the
+          start of a session. For each, choose a Roster entry or type a name, then click
+          <strong>Apply</strong>. A Roster entry is put in the Block as itself, so a Layout Editor
+          Block contents icon shows it as a Roster entry; anything else is put in as text. Blocks are
+          added to the list as they become occupied, and leave it once named. Check
+          <strong>Include Blocks that have a value</strong> to correct those too.
+          <strong>Copy</strong> puts the Blocks listed and their values on the clipboard as text.
+          This replaces the SetBlockValues.py and AllocateRosterEntryToBlock.py scripts.</p>
+
+          <p><span class="since">since 5.19.2</span><strong>Clear Values&hellip;</strong> clears the
+          value of the unoccupied Blocks only, which may be left from an earlier session, or of
+          every Block. This replaces the ClearBlockValues.py script.</p>
         </dd>
       </dl>
 

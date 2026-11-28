@@ -132,6 +132,10 @@ public class BlockTableAction extends AbstractTableAction<Block> {
         JMenuItem item = new JMenuItem(Bundle.getMessage("MenuItemDeletePaths"));
         pathMenu.add(item);
         item.addActionListener( e -> deletePaths(finalF) );
+        pathMenu.addSeparator();
+        item = new JMenuItem(Bundle.getMessage("MenuItemBlockDetails"));
+        pathMenu.add(item);
+        item.addActionListener( e -> openBlockDetails() );
         menuBar.add(pathMenu, pos + offset);
 
         JMenu speedMenu = new JMenu(Bundle.getMessage("SpeedsMenu"));
@@ -166,7 +170,67 @@ public class BlockTableAction extends AbstractTableAction<Block> {
         valuesMenu.add(item);
         item.addActionListener(e -> reloadBlockValues());
 
+        valuesMenu.addSeparator();
+        item = new JMenuItem(Bundle.getMessage("MenuItemNameTrains"));
+        valuesMenu.add(item);
+        item.addActionListener(e -> openBlockValues());
+        item = new JMenuItem(Bundle.getMessage("MenuItemClearValues"));
+        valuesMenu.add(item);
+        item.addActionListener(e -> clearValues(finalF));
+
         menuBar.add(valuesMenu, pos + offset + 2); // put it to the right of the Speed menu
+    }
+
+    /**
+     * Open the window to name the trains in occupied Blocks.
+     */
+    void openBlockValues() {
+        jmri.jmrit.beantable.block.BlockValuesFrame frame = new jmri.jmrit.beantable.block.BlockValuesFrame();
+        frame.initComponents();
+        frame.setVisible(true);
+    }
+
+    /**
+     * Open the Block Details window.
+     */
+    void openBlockDetails() {
+        jmri.jmrit.beantable.block.BlockDetailsFrame frame = new jmri.jmrit.beantable.block.BlockDetailsFrame();
+        frame.initComponents();
+        frame.setVisible(true);
+    }
+
+    /**
+     * Ask whether to clear the value of every Block, or of the unoccupied
+     * Blocks only, and do it.
+     *
+     * @param f the frame to show the question over
+     */
+    void clearValues(JmriJFrame f) {
+        Object[] choices = {Bundle.getMessage("ClearValuesUnoccupied"), Bundle.getMessage("ClearValuesAll"),
+            Bundle.getMessage("ButtonCancel")};
+        int choice = jmri.util.swing.JmriJOptionPane.showOptionDialog(f, Bundle.getMessage("ClearValuesQuestion"),
+                Bundle.getMessage("MenuItemClearValues"), jmri.util.swing.JmriJOptionPane.DEFAULT_OPTION,
+                jmri.util.swing.JmriJOptionPane.QUESTION_MESSAGE, null, choices, choices[0]);
+        if (choice == 0 || choice == 1) {
+            clearValues(choice == 0);
+        }
+    }
+
+    /**
+     * Clear Block values.
+     *
+     * @param unoccupiedOnly true to leave the values of occupied Blocks
+     * @return the number of Blocks cleared
+     */
+    public static int clearValues(boolean unoccupiedOnly) {
+        int n = 0;
+        for (Block b : InstanceManager.getDefault(jmri.BlockManager.class).getNamedBeanSet()) {
+            if (b.getValue() != null && !(unoccupiedOnly && b.getState() == Block.OCCUPIED)) {
+                b.setValue(null);
+                n++;
+            }
+        }
+        return n;
     }
 
     /**

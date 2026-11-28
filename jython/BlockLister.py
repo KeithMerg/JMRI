@@ -4,6 +4,8 @@
 # Author: Ken Cameron, copyright 2010
 # Part of the JMRI distribution
 #
+#
+# Since JMRI 5.19.2 the Block Table's Paths > Block Details shows this without a script.
 
 import jmri
 
